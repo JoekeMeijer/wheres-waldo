@@ -16,3 +16,6 @@ runs/
 .DS_Store
 *.egg-info/
 logs/
+
+.idea
+.idea/ # IntelliJ IDEA project files
