@@ -46,6 +46,9 @@ steps:
           --allow-unauthenticated \
           --set-env-vars PREDICTOR_API=$$API_URL/predict
 
+options:
+  logging: CLOUD_LOGGING_ONLY # Req'd when using Cloud Run trigger with Service Account
+
 # Specify the images to be pushed
 images:
   - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/prediction-api:latest'
