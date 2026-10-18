@@ -27,6 +27,12 @@ steps:
       - '--region'
       - '$_LOCATION'
       - '--allow-unauthenticated'
+      - '--port'
+      - '5000'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
 
   # Deploy the Prediction UI to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
