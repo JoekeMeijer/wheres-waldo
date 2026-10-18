@@ -8,8 +8,10 @@ import torch
 from PIL import Image
 from flask import Flask, request, jsonify
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+CURRENT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(CURRENT_DIR))
+
+MODELS_DIR = CURRENT_DIR / "models"
 
 from src.data.patch_generation import PATCH_SIZE
 from src.data.tiling import DEFAULT_SCALES, predict_multiscale
@@ -18,7 +20,6 @@ from src.models.patch_classifier import PatchClassifier
 from src.models.sliding_window import DEFAULT_WINDOW_SIZES, windows_for_scale
 from src.data.patch_dataset import to_tensor
 
-MODELS_DIR = PROJECT_ROOT / "models"
 
 app = Flask(__name__)
 
@@ -117,7 +118,7 @@ def predict():
         detections = sorted(raw_detections, key=lambda d: -d[1])[:top_n]
 
     else:
-        return jsonify({"error": "Invalid model choice or model not loaded"}), 400
+        return jsonify({"error": "Invalid model choice or model not loaded. Models loaded: tiled, sliding_window, yolo"}), 400
 
     # Format output for JSON serialization
     results = [{"box": box, "score": score} for box, score in detections]
@@ -125,4 +126,6 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
