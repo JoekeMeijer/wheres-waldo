@@ -148,7 +148,11 @@ if uploaded is not None and model_display_choice is not None:
                 }
 
                 try:
-                    response = requests.post(PREDICTOR_API, files={"file": img_byte_arr}, data=payload)
+                    response = requests.post(PREDICTOR_API, files={"file": ("image.jpg", img_byte_arr, "image/jpeg")}, data=payload)
+
+                    if response.status_code != 200:
+                        st.error(f"API Error: {response.text}")
+
                     response.raise_for_status()
 
                     # Parse the results from the API
