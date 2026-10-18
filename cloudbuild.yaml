@@ -1,7 +1,13 @@
 steps:
   # Prediction API
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/prediction-api:latest', './prediction-api']
+    args:
+      - 'build'
+      - '-f'
+      - 'prediction-api/Dockerfile' # Point to the Dockerfile...
+      - '-t'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/prediction-api:latest'
+      - '.'  # ...while keeping the build context as the root of the repository
 
   # Prediction UI
   - name: 'gcr.io/cloud-builders/docker'
@@ -50,7 +56,8 @@ steps:
           --image $_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/prediction-ui:latest \
           --region $_LOCATION \
           --allow-unauthenticated \
-          --set-env-vars PREDICTOR_API=$$API_URL/predict
+          --set-env-vars PREDICTOR_API=$$API_URL/predict \
+          --port 8501
 
 options:
   logging: CLOUD_LOGGING_ONLY # Req'd when using Cloud Run trigger with Service Account
