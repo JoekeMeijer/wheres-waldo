@@ -2,7 +2,6 @@ import io
 import json
 import sys
 from pathlib import Path
-import base64
 
 import numpy as np
 import torch
@@ -64,11 +63,7 @@ tiled_model, tiled_config = load_tiled_yolo()
 
 def run_sliding_window(model: PatchClassifier, image: Image.Image, score_threshold: float):
     W, H = image.width, image.height
-    heat = np.zeros((H, W), dtype=np.float32)
-    heat_count = np.zeros((H, W), dtype=np.float32)
-
     all_boxes, all_scores = [], []
-    frames = []
 
     for size in DEFAULT_WINDOW_SIZES:
         stride = max(1, int(size * 0.5))
@@ -84,42 +79,14 @@ def run_sliding_window(model: PatchClassifier, image: Image.Image, score_thresho
                 scores = torch.sigmoid(model(tensors)).numpy()
 
             for box, score in zip(batch, scores):
-                x1, y1, x2, y2 = box
-                heat[y1:y2, x1:x2] += score
-                heat_count[y1:y2, x1:x2] += 1
                 if score >= score_threshold:
                     all_boxes.append(box)
                     all_scores.append(float(score))
 
-            # Generate the heatmap frame
-            avg_heat = np.divide(heat, heat_count, out=np.zeros_like(heat), where=heat_count > 0)
-            overlay = Image.fromarray((avg_heat * 255).astype(np.uint8)).convert("L")
-            heat_rgb = Image.merge("RGB", (overlay, Image.new("L", overlay.size, 0), Image.new("L", overlay.size, 0)))
-            blended = Image.blend(image.convert("RGB"), heat_rgb, alpha=0.5)
-            frames.append(blended)
-
-    # Perform Non-Max Suppression
     if not all_boxes:
-        keep_detections = []
-    else:
-        keep_idx = non_max_suppression(np.array(all_boxes), np.array(all_scores), iou_threshold=0.2)
-        keep_detections = [(tuple(all_boxes[i]), all_scores[i]) for i in keep_idx]
-
-    # Compile frames into a base64 GIF
-    gif_b64 = None
-    if frames:
-        gif_io = io.BytesIO()
-        frames[0].save(
-            gif_io,
-            format="GIF",
-            save_all=True,
-            append_images=frames[1:],
-            duration=100,  # 100ms per frame
-            loop=0
-        )
-        gif_b64 = base64.b64encode(gif_io.getvalue()).decode("utf-8")
-
-    return keep_detections, gif_b64
+        return []
+    keep_idx = non_max_suppression(np.array(all_boxes), np.array(all_scores), iou_threshold=0.2)
+    return [(tuple(all_boxes[i]), all_scores[i]) for i in keep_idx]
 
 
 # API Endpoints
@@ -135,7 +102,6 @@ def predict():
     model_choice = request.form.get("model_choice")
     conf_threshold = float(request.form.get("conf_threshold", 0.05))
     top_n = int(request.form.get("top_n", 10))
-    gif_b64 = None
 
     if model_choice == "tiled" and tiled_model:
         scales = tuple(tiled_config.get("scales", DEFAULT_SCALES))
@@ -143,7 +109,7 @@ def predict():
         detections = [d for d in raw_detections if d[1] >= conf_threshold][:top_n]
 
     elif model_choice == "sliding_window" and sw_model:
-        raw_detections, gif_b64 = run_sliding_window(sw_model, image, conf_threshold)
+        raw_detections = run_sliding_window(sw_model, image, conf_threshold)
         detections = sorted(raw_detections, key=lambda d: -d[1])[:top_n]
 
     elif model_choice == "yolo" and yolo_model:
@@ -156,7 +122,7 @@ def predict():
 
     # Format output for JSON serialization
     results = [{"box": box, "score": score} for box, score in detections]
-    return jsonify({"detections": results, "animation_b64": gif_b64})
+    return jsonify({"detections": results})
 
 
 if __name__ == "__main__":
