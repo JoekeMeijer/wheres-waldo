@@ -1,3 +1,4 @@
+import base64
 import os
 import io
 import requests
@@ -135,7 +136,7 @@ if uploaded is not None and model_display_choice is not None:
             top_n = 10
 
         if st.button("Find Waldo!", type="primary"):
-            with st.spinner("Asking the API to peer into the crowd..."):
+            with st.spinner("Peering into the crowd..."):
                 # Send the image and parameters to the API
                 img_byte_arr = io.BytesIO()
                 image.save(img_byte_arr, format='JPEG')
@@ -158,9 +159,15 @@ if uploaded is not None and model_display_choice is not None:
                     # Parse the results from the API
                     results = response.json().get("detections", [])
                     detections = [(tuple(d["box"]), d["score"]) for d in results]
+                    animation_b64 = response.json().get("animation_b64")
 
                     if detections:
                         st.markdown(verdict_html(detections[0][1]), unsafe_allow_html=True)
+
+                        if animation_b64:
+                            gif_bytes = base64.b64decode(animation_b64)
+                            st.image(gif_bytes, caption="CNN Heatmap Progression", use_container_width=True)
+
                         placeholder.image(
                             draw_boxes(image, detections, color="red",
                                        label_top=5 if model_choice == "sliding_window" else None),
