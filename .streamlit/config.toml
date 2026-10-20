@@ -5,3 +5,6 @@ backgroundColor = "#FBF3E4"
 secondaryBackgroundColor = "#F3E3C3"
 textColor = "#1F1A17"
 font = "sans serif"
+
+[ui]
+hideTopBar = true
