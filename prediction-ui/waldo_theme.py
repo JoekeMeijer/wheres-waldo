@@ -76,12 +76,15 @@ def waldo_peek_svg() -> str:
 CSS = f"""
 @import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;800&display=swap');
 
-:root {{ --red: {RED}; --ink: {INK}; --paper: {PAPER}; }}
+:root {{ --red: {RED}; --ink: {INK}; --paper: {PAPER}; color-scheme: light !important; }}
 
 .stApp {{ background: var(--paper); color: var(--ink); font-family: 'Nunito', 'Trebuchet MS', sans-serif; }}
 [data-testid="stHeader"] {{ background: var(--paper); border-bottom: 3px solid var(--ink); }}
 .block-container {{ padding-top: 1rem !important; max-width: 1200px; }}
 hr {{ border: 0; border-top: 2px solid var(--ink) !important; }}
+
+/ * Hide default Streamlit header */
+.stAppHeader {{ display: none; }}
 
 /* top awning: vertical red/white stripes, like the shirt seen from far away */
 .wf-topbar {{
