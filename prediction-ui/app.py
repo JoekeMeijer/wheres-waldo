@@ -18,9 +18,6 @@ PREDICTOR_API = os.environ.get("PREDICTOR_API", "http://localhost:5000/predict")
 st.set_page_config(page_title="Where's Waldo?", page_icon="🔍", layout="wide")
 st.markdown(apply_theme_html(), unsafe_allow_html=True)
 st.markdown(hero_html(), unsafe_allow_html=True)
-st.caption(
-    "Three ways to find Waldo. The inference logic is now running securely on a backend API."
-)
 
 
 # Helpers
@@ -98,13 +95,10 @@ def show_candidates(image: Image.Image, detections: list, max_show: int = 10) ->
 
 
 # UI
-
 uploaded = st.file_uploader("Drop in a page from a Where's Waldo book", type=["jpg", "jpeg", "png"])
 
 model_map = {
-    "YOLO on native-resolution tiles": "tiled",
-    "Sliding-window CNN (from scratch)": "sliding_window",
-    "YOLO on the whole shrunken scene": "yolo"
+    "Sliding-window CNN (from scratch)": "sliding_window"
 }
 
 model_display_choice = st.radio("Who should do the looking?", list(model_map.keys()), horizontal=True)
@@ -124,18 +118,12 @@ if uploaded is not None and model_display_choice is not None:
         model_choice = model_map[model_display_choice]
 
         # Configure UI parameters based on selected model
-        if model_choice == "tiled":
-            conf = st.slider("Minimum confidence", 0.01, 0.95, 0.05, 0.01)
-            top_n = st.slider("Show at most this many candidates", 1, 10, 3)
-        elif model_choice == "sliding_window":
+        if model_choice == "sliding_window":
             conf = st.slider("Detection confidence threshold", 0.1, 0.95, 0.6, 0.05)
-            top_n = 10
-        else:
-            conf = st.slider("Detection confidence threshold", 0.05, 0.95, 0.1, 0.05)
             top_n = 10
 
         if st.button("Find Waldo!", type="primary"):
-            with st.spinner("Asking the API to peer into the crowd..."):
+            with st.spinner("Peering into the crowd..."):
                 # Send the image and parameters to the API
                 img_byte_arr = io.BytesIO()
                 image.save(img_byte_arr, format='JPEG')
@@ -163,7 +151,7 @@ if uploaded is not None and model_display_choice is not None:
                         st.markdown(verdict_html(detections[0][1]), unsafe_allow_html=True)
                         placeholder.image(
                             draw_boxes(image, detections, color="red",
-                                       label_top=5 if model_choice == "sliding_window" else None),
+                                       label_top=5),
                             caption=f"{len(detections)} candidate(s) returned",
                             use_container_width=True,
                         )
