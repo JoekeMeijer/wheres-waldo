@@ -1,4 +1,5 @@
 import io
+import json
 import sys
 from pathlib import Path
 
@@ -13,6 +14,7 @@ sys.path.insert(0, str(CURRENT_DIR))
 MODELS_DIR = CURRENT_DIR / "models"
 
 from src.data.patch_generation import PATCH_SIZE
+from src.data.tiling import DEFAULT_SCALES, predict_multiscale
 from src.eval.box_utils import non_max_suppression
 from src.models.patch_classifier import PatchClassifier
 from src.models.sliding_window import DEFAULT_WINDOW_SIZES, windows_for_scale
@@ -23,6 +25,7 @@ app = Flask(__name__)
 
 
 # Model Loading
+
 def load_sliding_window_model() -> PatchClassifier | None:
     path = MODELS_DIR / "sliding_window_classifier.pt"
     if not path.exists():
@@ -32,9 +35,32 @@ def load_sliding_window_model() -> PatchClassifier | None:
     model.eval()
     return model
 
+
+def load_yolo_model():
+    path = MODELS_DIR / "yolo_detector.pt"
+    if not path.exists():
+        return None
+    from ultralytics import YOLO
+    return YOLO(str(path))
+
+
+def load_tiled_yolo():
+    path = MODELS_DIR / "yolo_tiled_detector.pt"
+    if not path.exists():
+        return None, {}
+    from ultralytics import YOLO
+    config_path = MODELS_DIR / "yolo_tiled_config.json"
+    config = json.loads(config_path.read_text()) if config_path.exists() else {}
+    return YOLO(str(path)), config
+
+
 sw_model = load_sliding_window_model()
+yolo_model = load_yolo_model()
+tiled_model, tiled_config = load_tiled_yolo()
+
 
 # Inference
+
 def run_sliding_window(model: PatchClassifier, image: Image.Image, score_threshold: float):
     W, H = image.width, image.height
     all_boxes, all_scores = [], []
@@ -64,6 +90,7 @@ def run_sliding_window(model: PatchClassifier, image: Image.Image, score_thresho
 
 
 # API Endpoints
+
 @app.route("/predict", methods=["POST"])
 def predict():
     if "file" not in request.files:
@@ -76,11 +103,22 @@ def predict():
     conf_threshold = float(request.form.get("conf_threshold", 0.05))
     top_n = int(request.form.get("top_n", 10))
 
-    if model_choice == "sliding_window" and sw_model:
+    if model_choice == "tiled" and tiled_model:
+        scales = tuple(tiled_config.get("scales", DEFAULT_SCALES))
+        raw_detections = predict_multiscale(tiled_model, image, scales=scales, conf=0.01)
+        detections = [d for d in raw_detections if d[1] >= conf_threshold][:top_n]
+
+    elif model_choice == "sliding_window" and sw_model:
         raw_detections = run_sliding_window(sw_model, image, conf_threshold)
         detections = sorted(raw_detections, key=lambda d: -d[1])[:top_n]
+
+    elif model_choice == "yolo" and yolo_model:
+        yolo_result = yolo_model.predict(image, conf=conf_threshold, verbose=False)[0]
+        raw_detections = ((tuple(b.xyxy[0].tolist()), float(b.conf.item())) for b in yolo_result.boxes)
+        detections = sorted(raw_detections, key=lambda d: -d[1])[:top_n]
+
     else:
-        return jsonify({"error": "Invalid model choice or model not loaded. Model loaded: sliding_window."}), 400
+        return jsonify({"error": "Invalid model choice or model not loaded. Models loaded: tiled, sliding_window, yolo"}), 400
 
     # Format output for JSON serialization
     results = [{"box": box, "score": score} for box, score in detections]
