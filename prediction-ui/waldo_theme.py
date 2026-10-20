@@ -149,7 +149,7 @@ hr {{ border: 0; border-top: 2px solid var(--ink) !important; }}
   background: repeating-linear-gradient(90deg, var(--red) 0 18px, #fff 18px 36px); }}
 
 /* a tiny Waldo hiding in the corner of the page, as one does */
-.wf-hidden {{ position: fixed; right: 22px; bottom: -6px; width: 54px; z-index: 5; cursor: help; transition: transform .2s; }}
+.wf-hidden {{ position: fixed; right: 22px; bottom: -14px; width: 54px; z-index: 5; cursor: help; transition: transform .2s; }}
 .wf-hidden:hover {{ transform: translateY(-14px); }}
 @media (max-width: 760px) {{ .wf-hidden {{ display: none; }} }}
 """
