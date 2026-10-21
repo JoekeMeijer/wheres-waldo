@@ -67,27 +67,6 @@ steps:
           --allow-unauthenticated \
           --set-env-vars PREDICTOR_API=$$API_URL/predict \
           --port 8501
-
-  # Trigger CT Pipeline
-  - name: 'python:3.12.7-slim'
-    entrypoint: 'bash'
-    dir: 'ct' # Execute within the /ct/ subfolder
-    args:
-      - '-c'
-      - |
-        # Install required dependencies
-        pip install --no-cache-dir -r requirements.txt
-        
-        # Compile to YAML
-        python ct_pipeline.py --target_file pipeline.yaml
-        
-        # Submit to Vertex AI
-        python run_pipeline.py \
-          --project_id $PROJECT_ID \
-          --location $_LOCATION \
-          --template_path pipeline.yaml \
-          --parameters_path parameters.json \
-          --pipeline_root gs://de2026_team10_temp/pipeline_root
 options:
   logging: CLOUD_LOGGING_ONLY # Req'd when using Cloud Run trigger with Service Account
 
