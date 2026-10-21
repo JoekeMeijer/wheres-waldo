@@ -1,4 +1,13 @@
 steps:
+  # Download the latest CNN model from GCS before building the image
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p ./prediction-api/models/
+        gcloud storage cp gs://de2026_team10_models/cnn_sliding_window/cnn_sliding_window_model.pt ./prediction-api/models/sliding_window_classifier.pt
+
   # Prediction API
   - name: 'gcr.io/cloud-builders/docker'
     args:
