@@ -1,0 +1,8 @@
+{
+    "project_id": "joekiepoekie-de",
+    "data_bucket": "de2026_team10_data",
+    "where_waldo_filename": "wheres-waldo-voc.zip", 
+    "hey_waldo_filename": "Hey-Waldo.zip", 
+    "model_repo": "de2026_team10_models", 
+    "current_metrics_filename": "metrics/model_metrics.csv"
+}

@@ -1,0 +1,11 @@
+google-cloud-aiplatform
+google-cloud-storage
+kfp
+google-cloud-pipeline-components
+pandas
+scikit-learn
+lxml
+numpy
+pillow
+albumentations>=2.0
+torch
