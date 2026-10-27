@@ -1,5 +1,5 @@
 steps:
-  - # Run unit tests
+  # Run unit tests
   - name: 'python:3.14-slim'
     entrypoint: 'bash'
     args:
