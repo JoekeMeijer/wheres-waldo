@@ -1,4 +1,13 @@
 steps:
+  - # Run unit tests
+  - name: 'python:3.14-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install --quiet -r requirements.txt
+        python -m pytest tests -q
+
   # Download the latest CNN model from GCS before building the image
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
