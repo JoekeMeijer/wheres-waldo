@@ -20,5 +20,24 @@ steps:
           --parameters_path parameters.json \
           --pipeline_root gs://de2026_team10_temp/pipeline_root
 
+  # Deploy only when the CT pipeline promoted a new champion model.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        RESULT_URI=$$(cat ct/promotion_result_path.txt)
+        RESULT=$$(gcloud storage cat "$$RESULT_URI")
+        echo "Promotion result: $$RESULT"
+
+        if [ "$$(printf '%s' "$$RESULT" | grep -c '"promoted": true')" -eq 1 ]; then
+          gcloud builds submit . \
+            --config=cloudbuild.yaml \
+            --project=$PROJECT_ID \
+            --substitutions=_LOCATION=$_LOCATION,_REPOSITORY=$_REPOSITORY
+        else
+          echo "No new champion model; deployment skipped."
+        fi
+
 options:
   logging: CLOUD_LOGGING_ONLY # Req'd when using Cloud Run trigger with Service Account

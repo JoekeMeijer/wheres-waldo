@@ -1212,13 +1212,35 @@ def upload_model_to_gcs(project_id: str, model_repo: str, model: Input[Model],
     logging.info("Saved the metrics to the folder : " + scene_res_path + "in the bucket" + model_repo)
 
 
+@dsl.component(
+    packages_to_install=["google-cloud-storage"],
+    base_image="python:3.12.7-slim"
+)
+def write_promotion_result(
+    project_id: str,
+    result_bucket: str,
+    result_path: str,
+    decision: str,
+):
+    """Write the model promotion decision for the Cloud Build orchestrator."""
+    import json
+    from google.cloud import storage
+
+    client = storage.Client(project=project_id)
+    blob = client.bucket(result_bucket).blob(result_path)
+    blob.upload_from_string(
+        json.dumps({"promoted": decision == "CT", "decision": decision}),
+        content_type="application/json",
+    )
+
 
 #### Defining the Workflow of the Pipeline ####
 # Define the workflow of the pipeline.
 @kfp.dsl.pipeline(
     name="wheres-waldo-sliding-window-training-pipeline")
 def pipeline(project_id: str, data_bucket: str, where_waldo_filename: str, 
-             hey_waldo_filename:str, model_repo: str, current_metrics_filename: str):
+             hey_waldo_filename: str, model_repo: str, current_metrics_filename: str,
+             promotion_result_bucket: str, promotion_result_path: str):
     
     
     di_op = download_data(
@@ -1270,6 +1292,12 @@ def pipeline(project_id: str, data_bucket: str, where_waldo_filename: str,
             ct_model_scene_results=training_cnn_job_run_op.outputs["out_scene_results"]
         ).after(comp_model_op)
 
+    write_promotion_result(
+        project_id=project_id,
+        result_bucket=promotion_result_bucket,
+        result_path=promotion_result_path,
+        decision=comp_model_op.output,
+    ).after(comp_model_op)
 
 
 # Function to compile pipeline

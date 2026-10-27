@@ -1,5 +1,7 @@
 import json
 import argparse
+from pathlib import Path
+from uuid import uuid4
 import google.cloud.aiplatform as aip
 
 
@@ -7,6 +9,11 @@ def run_pipeline(project_id, location, template_path, parameters_path, pipeline_
     # Load parameters from JSON
     with open(parameters_path, 'r') as f:
         pipeline_params = json.load(f)
+
+    result_bucket = pipeline_params["promotion_result_bucket"]
+    result_path = f"ct-results/{uuid4()}/promotion.json"
+    pipeline_params["promotion_result_path"] = result_path
+    Path("promotion_result_path.txt").write_text(f"gs://{result_bucket}/{result_path}\n")
 
     # Initialize Vertex AI client
     aip.init(project=project_id, location=location)
@@ -19,7 +26,8 @@ def run_pipeline(project_id, location, template_path, parameters_path, pipeline_
         parameter_values=pipeline_params
     )
 
-    job.submit()  # Use .submit() instead of .run() for CI/CD so it doesn't block the build indefinitely
+    job.run()
+
 
 
 if __name__ == '__main__':

@@ -4,5 +4,7 @@
     "where_waldo_filename": "wheres-waldo-voc.zip", 
     "hey_waldo_filename": "Hey-Waldo.zip", 
     "model_repo": "de2026_team10_models", 
-    "current_metrics_filename": "metrics/model_metrics.csv"
+    "current_metrics_filename": "metrics/model_metrics.csv",
+    "promotion_result_bucket": "de2026_team10_models",
+    "promotion_result_path": "ct-results/default/promotion.json"
 }
