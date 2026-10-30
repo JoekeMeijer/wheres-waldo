@@ -1,4 +1,5 @@
 FROM python:3.14.8-slim
+LABEL author="group 10"
 
 WORKDIR /usr/src/myapp
 
